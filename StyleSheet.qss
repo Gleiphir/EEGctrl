@@ -1,0 +1,100 @@
+QMainWindow {
+    /*background-color:#000000;*/
+    background-color:#FFFFFF;
+    /*background-color:#FFF5EE;*/
+    /*background-image: url("resources/bg-sample-scroll.png");*/
+}
+
+QFrame {
+    background-color:rgba(32,178,170, 30);
+    color:rgba(32,178,170, 30);
+    border:none;
+    /*
+    border-width: 5px 5px 5px 5px;
+    border-color: black;
+    border-style: solid;
+    border-radius:10px;*/
+
+}
+
+QGridLayout > .QFrame {
+    border-width: 5px 5px 5px 5px;
+    border-color: black;
+    border-style: solid;
+    border-radius:10px;
+}
+
+QProgressBar {
+    /*border: 5px black solid;*/
+    background-color:#DBDBDB ;
+    color:#FFF5EE;
+    border-radius: 5px;
+}
+
+QMainWindow > .QFrame{
+    border: 3px black solid;
+    background-color:rgba(152,251,152, 30);
+    color:black;
+    border-radius:5px;
+}
+QLabel{
+    border: 3px black solid;
+    background-color: rgba(50,205,50, 10);
+    text-align:center;
+    color:#000000;
+}
+QLabel#ShowText{
+    border: 5px black solid;
+    background-color: cyan;
+    color:#000000;
+    text-align:center;
+}
+QMainWindow QLineEdit {
+    border: 2px solid gray;
+    border-width: 3px 3px 3px 3px;
+    border-radius: 10px;
+    padding: 0 8px;
+    background: #98fb98;
+    selection-background-color: darkgray;
+}
+
+
+
+QFrame > QPushButton{
+    background-color:#673ab7;
+    color:#F5F5F5;
+    border:none;
+    border-width: 1px 1px 1px 1px;
+    border-color: white;
+    border-style: solid;
+    border-radius:6px;
+}
+
+QFrame#Selected{
+    border-width: 5px 5px 5px 5px;
+    border-color: rgba(242,44,90,10);
+    border-style: solid;
+    border-radius: 10px;
+    /*color: red;*/
+}
+
+QProgressBar::chunk {
+     background-color:#32cd32;
+     width: 3px;
+}
+
+QFrame:focus{
+    border-width: 5px 5px 5px 5px;
+    border-color: #F22C5A;
+    border-style: solid;
+    border-radius: 10px;
+}
+/*QPushButton#QuitBtn{
+    background-color:#673ab7;
+    color:red;
+    border:none;
+    border-width: 0px 0px 0px 0px;
+    border-style: solid;
+    border-radius:6px;
+}
+*/

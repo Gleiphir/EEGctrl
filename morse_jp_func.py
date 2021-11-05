@@ -75,9 +75,13 @@ MorseMapping = OrderedDict({
 "－・・・・－":"-",
 "・・－－・－":"_",
 "・・・－・・－":"消",
-"・－－・－・":"@",
+"・－－・－・":"呼",
 "－－・・・－":"礼"
 })
+
+
+
+
 
 def NearestHint(pattern:str = "",pick_num = -1):
     candidates = [ key for key in MorseMapping if re.match("^"+ pattern,key)]

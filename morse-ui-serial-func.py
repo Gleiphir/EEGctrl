@@ -251,6 +251,11 @@ class mainWindow (QMainWindow):
             self.speak()
             self.clearText()
             return
+        if chr == '呼': # backspace
+            self.textStr = "介護者を呼んでください"
+            self.speak()
+            self.clearText()
+            return
 
         self.textStr = self.textStr + chr
 

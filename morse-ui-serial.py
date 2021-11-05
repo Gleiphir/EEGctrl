@@ -34,7 +34,7 @@ engine = pyttsx3.init()
 import serial
 from serial.tools import list_ports
 
-print([ port.name for port in list_ports.comports()])
+print([ port.device for port in list_ports.comports()])
 
 
 
@@ -166,7 +166,7 @@ class mainWindow (QMainWindow):
 
     def serialInit(self):
         if len(list_ports.comports()) > 0:
-            self.ser = serial.Serial(list_ports.comports()[0].name, baudrate=115200)
+            self.ser = serial.Serial(list_ports.comports()[0].device, baudrate=115200)
             if not self.ser.is_open:
                 self.ser.open()
         while len(self.ser.read_all() ) == 0:
@@ -258,7 +258,11 @@ class mainWindow (QMainWindow):
         if len(self.textStr) < 1:
             return
         #pytts_audioPlay(self.textStr)
-        gTTS_audioPlay(self.textStr)
+        try:
+            gTTS_audioPlay(self.textStr)
+        except Exception as e:
+            print(e)
+            return
 
     def update(self) -> None:
         self.ShowText.setText(self.textStr)

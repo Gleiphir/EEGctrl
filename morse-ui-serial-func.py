@@ -1,7 +1,5 @@
-# This is a sample Python script.
+# Used for Linux on Raspi
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import math
 
 from pyjoycon import GyroTrackingJoyCon, get_L_id,get_R_id
@@ -30,6 +28,8 @@ import urllib,json
 
 import pyttsx3
 engine = pyttsx3.init()
+
+import argparse
 
 import serial
 from serial.tools import list_ports

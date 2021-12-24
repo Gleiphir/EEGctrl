@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication, \
     QFileDialog, QPushButton, QLabel, \
     QGridLayout, QLineEdit, QFrame, QProgressBar,QSizePolicy, QVBoxLayout
 from PyQt5.QtGui import QFont, QKeyEvent, QTextCharFormat, QPen, QFont, QKeyEvent, QTextCharFormat, QPainter, QBrush, QColor
-from PyQt5.QtCore import QTimer,Qt, QRect
+from PyQt5.QtCore import QTimer,Qt, QRect,pyqtSignal,pyqtSlot
 import sys
 import pygame
 from pygame.locals import *
@@ -31,10 +31,6 @@ engine = pyttsx3.init()
 
 import argparse
 
-import serial
-from serial.tools import list_ports
-
-print([ port.device for port in list_ports.comports()])
 
 """
 Aparser = argparse.ArgumentParser()
@@ -43,14 +39,9 @@ Aparser.add_argument("autocali",type=bool,default=False)
 
 args = Aparser.parse_args()
 """
-calib_zero = 0.0
 
-GyroMapFn = lambda AglX, AglY, AglZ: (AglX - calib_zero)
 
-ThresholdL = -10.0
-ThresholdR = 5.0
-
-INPUT_SUSPEND_WINDOW_MS = 1000
+INPUT_SUSPEND_WINDOW_MS = 2000
 
 #scanfloat = lambda S: [ float(x)  for x  in S.split(' ') ]
 def scanfloat(chunk:bytes):
@@ -103,88 +94,21 @@ validColor = QColor(78 ,238 ,148 , 127)
 bkgColor = QColor(255 ,193 ,193 ,127)
 markColor = QColor(0, 0, 128, 127)
 
-calib_time_ms = 180000
-calib_stop_angle = 0.8
-
-class RangeArea(QLabel):
-    def __init__(self, parent=None):
-        QLabel.__init__(self,parent)
-        self._widgetpos = 0.0
-        self._range = (ThresholdL,ThresholdR)
-        print(self._range)
-        self.gyropos = 0
-
-        self.validPtr = QPainter(self)
-        self.validPtr.setBrush(QBrush(validColor, Qt.SolidPattern))
-        self.validPtr.setPen(Qt.NoPen)
-        self.bkgPtr = QPainter(self)
-        self.bkgPtr.setBrush(QBrush(bkgColor, Qt.SolidPattern))
-        self.bkgPtr.setPen(Qt.NoPen)
-        self.dataPtr = QPainter(self)
-        self.dataPtr.setBrush(QBrush(markColor, Qt.SolidPattern))
-        self.dataPtr.setPen(Qt.NoPen)
-        self.setFixedHeight(20)
-        self.area = None
-
-    def setArea(self,x,y,width,height):
-        self.area = QRect(x,y,width,20)
-
-    def setGpos(self,gpos:float):
-        self.gyropos = gpos
-        #print("---------------gryopos:{}-------------".format(self.gyropos))
-        #print("------area----{},{},{},{},".format(self.area.x(),self.area.y(),self.area.width(),self.area.height()))
-
-    def setrange(self,new_range,gpos,widgetpos = None):
-        assert len(new_range) ==6
-        assert len(gpos) ==6
-        if widgetpos:
-            self._widgetpos = widgetpos
-        self._range = new_range
-        self.gyropos =gpos
 
 
-    def paintEvent(self, event):
-        self.bkgPtr.begin(self)
-        self.bkgPtr.fillRect(
-            self.area,
-            bkgColor
-        )
-        self.bkgPtr.end()
+class TriggerFrame(QFrame):
+    inputSig = pyqtSignal(int)
 
-        self.validPtr.begin(self)
-        self.validPtr.fillRect(QRect(
-               self.area.x() + self.area.width() // 2 + int(self.area.width() / 2 * calib_zero / 90.0) + int( self.area.width() /2 * ThresholdL / 90.0 )  ,
-                self.area.y() ,
-                int( self.area.width() /2  * (ThresholdR - ThresholdL) / 90.0 ) ,
-                self.area.height()
-            ),
-            validColor
-        )
-        self.validPtr.end()
-
-        self.dataPtr.begin(self)
-        self.dataPtr.fillRect(QRect(
-            self.area.x() + self.area.width() // 2 + int(self.area.width() / 2 * calib_zero / 90.0) - 1,
-            self.area.y(),
-            3,
-            self.area.height()
-        )
-            , QColor(255, 100, 255, 127)
-        )
-        self.dataPtr.fillRect(QRect(
-            self.area.x() + self.area.width() // 2 + int(self.area.width() / 2 * calib_zero / 90.0) +int(self.area.width() /2  * self.gyropos / 90.0),
-            self.area.y(),
-            5,
-            self.area.height()
-        )
-        , markColor
-        )
-
-        self.dataPtr.end()
-        #print(":::: {}".format(self.area.x() // 2 + int(self.area.width() * self.gyropos / 90.0)))
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        "L = . | Q = -"
+        print(a0.key())
+        if a0.key() == Qt.Key_L:
+            self.inputSig.emit(1)
+        elif a0.key() == Qt.Key_Q:
+            self.inputSig.emit(2)
 
 class mainWindow (QMainWindow):
-    def __init__(self,fontsize=40,antiDrift = True):
+    def __init__(self,fontsize=40):
         super().__init__()
         self.setObjectName("MainW")
         self.setFont(QFont('microsoft Yahei'))
@@ -193,10 +117,6 @@ class mainWindow (QMainWindow):
         self.mainFrame = QFrame(self)
         self.mainFrame.setStyleSheet("font-size:{}px".format(fontsize))
 
-
-
-        self.gryoShow = RangeArea(self)
-        self.lastGryo = 0.0
 
 
         self.ShowKanji = QLabel("kanji",self)
@@ -217,7 +137,6 @@ class mainWindow (QMainWindow):
         self.setCentralWidget(self.mainFrame)
         self.vertic = QVBoxLayout(self.mainFrame)
 
-        self.vertic.addWidget(self.gryoShow)
         self.vertic.addWidget(self.ShowKanji)
         self.vertic.addWidget(self.ShowText)
         self.vertic.addWidget(self.ShowMorse)
@@ -230,11 +149,6 @@ class mainWindow (QMainWindow):
         except:
             print("Qss not loaded")
 
-        self.ser = None
-
-
-
-
         #self.suspendTimer.timeout.connect()
 
         self.setFont(QFont('microsoft Yahei', self.size().height() // 6))
@@ -242,7 +156,6 @@ class mainWindow (QMainWindow):
         grid.setSpacing(5)
 
         self.mainFrame.setLayout(grid)
-        self.gryoShow.setArea(0,0,self.width(),self.height())
 
         self.textStr = ""
         self.morseStr = ""
@@ -252,32 +165,16 @@ class mainWindow (QMainWindow):
 
         self.defaultOPTimer = QTimer(self)
         self.defaultOPTimer.timeout.connect(lambda : self.MrsInput(0))
+        self.defaultOPTimer.start(INPUT_SUSPEND_WINDOW_MS)
 
-        self.autoUpdateTimer  = QTimer(self)
-        self.autoUpdateTimer.timeout.connect(self.readSerial)
-        self.autoUpdateTimer.start(20)
+        #self.autoUpdateTimer  = QTimer(self)
+        #self.autoUpdateTimer.timeout.connect(s)
+        #self.autoUpdateTimer.start(20)
 
-        self.calibTimer = QTimer(self)
-        self.calibTimer.timeout.connect(self.reCalib)
-
-        self.serialInit()
-
-    def reCalib(self):
-        global calib_zero
-        calib_zero = self.lastGryo
-        self.ShowHint.setText("Recalibration")
-
-    def serialInit(self):
-        if len(list_ports.comports()) > 0:
-            self.ser = serial.Serial(list_ports.comports()[0].device, baudrate=115200)
-            if not self.ser.is_open:
-                self.ser.open()
-        while len(self.ser.read_all() ) == 0:
-            pass
-        #print(self.ser.read_all())
-        self.ser.write(b'H')
+        #self.serialInit()
 
 
+    #@pyqtSlot(int)
     def MrsInput(self,sig:int):
         """ 0 = / ; 1 = . ; 2 = - ;  """
         if sig == 0:
@@ -295,45 +192,9 @@ class mainWindow (QMainWindow):
             pass
         if len(self.morseStr) >= 8:
             self.morseStr = ""
-
-    def readSerial(self):
-        if not self.ser:
-            self.update()
-            return None
-
-        if not self.ser.readable():
-            self.update()
-            return None
-        datachunk = self.ser.read_all()
-        if len(datachunk) ==0:
-            return
-        #print(datachunk)
-        aglx, agly, aglz = scanfloat(datachunk)
-        if not aglx:
-            return
-        controlval = GyroMapFn(aglx, agly, aglz)
-        print(aglx, agly, aglz," CtrlVal: " ,controlval)
-        self.gryoShow.setGpos(controlval)
-        if self.suspendTimer.isActive():
-            self.update()
-            return None
-        if self.lastGryo - controlval > calib_stop_angle:
-            self.calibTimer.start(calib_time_ms)
-
-        if controlval <= ThresholdL:
-            self.defaultOPTimer.stop()
-            self.MrsInput(1)
-            self.suspendTimer.start(INPUT_SUSPEND_WINDOW_MS)
-        elif controlval >= ThresholdR:
-
-            self.defaultOPTimer.stop()
-            self.MrsInput(2)
-            self.suspendTimer.start(INPUT_SUSPEND_WINDOW_MS)
-        else:
-            if not self.defaultOPTimer.isActive():
-                self.defaultOPTimer.start(1000)
-            #self.MrsInput(0)
         self.update()
+
+
 
     def addCharWFunc(self, chr:str):
         """ funtional chrs"""
@@ -410,16 +271,18 @@ class mainWindow (QMainWindow):
             except Exception as e:
                 #print(e)
                 self.ShowKanji.setText("- | -")
-        self.gryoShow.repaint()
 
 
     def keyPressEvent(self, a0: QKeyEvent) -> None:
-        if a0.key()== Qt.Key_A:
+        if a0.key()== Qt.Key_L:
             self.MrsInput(1)
-        if a0.key()== Qt.Key_D:
+
+        if a0.key()== Qt.Key_Q:
             self.MrsInput(2)
+
         if a0.key() == Qt.Key_W:
             self.MrsInput(0)
+        self.defaultOPTimer.start(INPUT_SUSPEND_WINDOW_MS)
         self.update()
 
 class controller:

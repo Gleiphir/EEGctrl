@@ -99,7 +99,7 @@ class DrawFrame(QFrame):
         if widgetpos:
             self._widgetpos = widgetpos
         self._range = new_range
-        self.gyropos =gpos
+        self.gyropos = gpos
 
     def paintEvent(self, event):
         self.bkgPtr.begin(self)
